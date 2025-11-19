@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SmartInventory</title>
+    <link rel="stylesheet" href="CSS/main.css">
+    <link rel="stylesheet" href="CSS/dashboard.css">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="images/logo.png" alt="Logo" class="sidebar-logo">
+            <h2 class="sidebar-title">SmartInventory</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item active">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="items.html" class="nav-item">
+                <span class="nav-icon">📦</span>
+                <span class="nav-text">Items</span>
+            </a>
+            <a href="transactions.html" class="nav-item">
+                <span class="nav-icon">💳</span>
+                <span class="nav-text">Transactions</span>
+            </a>
+            <a href="reports.html" class="nav-item">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Reports</span>
+            </a>
+            <a href="suppliers.html" class="nav-item">
+                <span class="nav-icon">🏢</span>
+                <span class="nav-text">Suppliers</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="sidebar-username">Username</div>
+                    <div class="user-role" id="sidebar-role">User</div>
+                </div>
+            </div>
+            <a href="#" id="logout-btn" class="logout-btn">
+                <span class="nav-icon">🚪</span>
+                <span class="nav-text">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <h1 class="page-title">Dashboard</h1>
+                <p class="page-subtitle">Welcome back, <span id="top-bar-username">User</span>!</p>
+            </div>
+            <div class="top-bar-right">
+                <div class="notification-badge-container">
+                    <a href="alerts.html" class="notification-btn">
+                        <span class="notification-icon">🔔</span>
+                        <span class="notification-count" id="notification-count">0</span>
+                    </a>
+                </div>
+                <div class="current-date" id="current-date-display">...</div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            <!-- Alert Messages -->
+            <div id="alert-container"></div>
+
+            <!-- Metrics Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card card-blue">
+                    <div class="metric-icon">📦</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-products">0</h3>
+                        <p class="metric-label">Total Products</p>
+                        <span class="metric-change positive" id="new-products">+0 this week</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-orange">
+                    <div class="metric-icon">⚠️</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="low-stock-count">0</h3>
+                        <p class="metric-label">Low Stock Items</p>
+                        <span class="metric-change warning">Needs attention</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-green">
+                    <div class="metric-icon">💰</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="today-revenue">$0</h3>
+                        <p class="metric-label">Today's Revenue</p>
+                        <span class="metric-change positive" id="revenue-change">+0% vs yesterday</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-purple">
+                    <div class="metric-icon">📈</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-sales">0</h3>
+                        <p class="metric-label">Sales Today</p>
+                        <span class="metric-change positive" id="sales-count">0 transactions</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions-section">
+                <h2 class="section-title">Quick Actions</h2>
+                <div class="quick-actions-grid">
+                    <a href="transactions.html?action=sale" class="action-card">
+                        <span class="action-icon">🛒</span>
+                        <span class="action-text">Record Sale</span>
+                    </a>
+                    <a href="items.html?action=add" class="action-card">
+                        <span class="action-icon">➕</span>
+                        <span class="action-text">Add Item</span>
+                    </a>
+                    <a href="transactions.html?action=purchase" class="action-card">
+                        <span class="action-icon">📥</span>
+                        <span class="action-text">Add Stock</span>
+                    </a>
+                    <a href="reports.html?action=generate" class="action-card">
+                        <span class="action-icon">📊</span>
+                        <span class="action-text">Generate Report</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="dashboard-grid">
+                <!-- Left Column -->
+                <div class="dashboard-left">
+                    <!-- Low Stock Alerts -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">🔴 Low Stock Alerts</h2>
+                            <a href="alerts.html" class="card-link">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div id="low-stock-list">
+                                <div class="empty-state">
+                                    <span class="empty-icon">📋</span>
+                                    <p>Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">💳 Recent Transactions</h2>
+                            <a href="transactions.html" class="card-link">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div id="recent-transactions">
+                                <div class="empty-state">
+                                    <span class="empty-icon">📋</span>
+                                    <p>Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="dashboard-right">
+                    <!-- Top Selling Products -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">🏆 Top Selling Products</h2>
+                            <select class="time-filter" id="time-filter">
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="year">This Year</option>
+                            </select>
+                        </div>
+                        <div class="card-body">
+                            <div id="top-products-list">
+                                <div class="empty-state">
+                                    <span class="empty-icon">📊</span>
+                                    <p>Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Status Overview -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">📊 Stock Status Overview</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="stock-status-grid">
+                                <div class="status-item">
+                                    <div class="status-color status-green"></div>
+                                    <div class="status-info">
+                                        <div class="status-label">In Stock</div>
+                                        <div class="status-value" id="in-stock-count">0</div>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-color status-orange"></div>
+                                    <div class="status-info">
+                                        <div class="status-label">Low Stock</div>
+                                        <div class="status-value" id="low-stock-status">0</div>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-color status-red"></div>
+                                    <div class="status-info">
+                                        <div class="status-label">Out of Stock</div>
+                                        <div class="status-value" id="out-of-stock-count">0</div>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-color status-gray"></div>
+                                    <div class="status-info">
+                                        <div class="status-label">Expired</div>
+                                        <div class="status-value" id="expired-count">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Info -->
+                    <div class="card card-info">
+                        <div class="card-body">
+                            <h3>💡 Quick Tip</h3>
+                            <p>Keep your stock levels above the threshold to avoid running out of popular items. Set up automatic alerts for better management.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="JavaScript/dashboard.js"></script>
+</body>
+</html>

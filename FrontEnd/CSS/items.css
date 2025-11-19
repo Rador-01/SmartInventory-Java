@@ -1,0 +1,97 @@
+/* --- Tab Styles --- */
+.tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: var(--spacing-lg);
+}
+
+.tab {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border: none;
+    background: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all var(--transition-fast);
+    font-size: 1.05rem;
+}
+
+.tab:hover {
+    color: var(--primary-color);
+}
+
+.tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* --- Management Form & List Styles --- */
+.management-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.management-form .btn {
+    align-self: end;
+    /* Ensure button aligns with inputs */
+    padding: 10px 16px; /* Match .form-control padding from main.css */
+    height: 42px; /* Set explicit height to match inputs */
+}
+
+.item-list {
+    margin-top: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.item-list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    transition: all 0.2s ease;
+}
+
+.item-list-row:hover {
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.item-list-row span {
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+.item-list-row .btn-danger {
+    margin-left: 16px;
+}
+
+/* Animation */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

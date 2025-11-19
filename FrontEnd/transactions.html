@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - SmartInventory</title>
+    <link rel="stylesheet" href="CSS/main.css">
+    <link rel="stylesheet" href="CSS/dashboard.css">
+    <link rel="stylesheet" href="CSS/items.css">
+    <link rel="stylesheet" href="CSS/transactions.css">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="images/logo.png" alt="Logo" class="sidebar-logo">
+            <h2 class="sidebar-title">SmartInventory</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="items.html" class="nav-item">
+                <span class="nav-icon">📦</span>
+                <span class="nav-text">Items</span>
+            </a>
+            <a href="transactions.html" class="nav-item active">
+                <span class="nav-icon">💳</span>
+                <span class="nav-text">Transactions</span>
+            </a>
+            <a href="reports.html" class="nav-item">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Reports</span>
+            </a>
+            <a href="suppliers.html" class="nav-item">
+                <span class="nav-icon">🏢</span>
+                <span class="nav-text">Suppliers</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="sidebar-username">Username</div>
+                    <div class="user-role" id="sidebar-role">User</div>
+                </div>
+            </div>
+            <a href="#" id="logout-btn" class="logout-btn">
+                <span class="nav-icon">🚪</span>
+                <span class="nav-text">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <h1 class="page-title">Transactions</h1>
+                <p class="page-subtitle">Record Sales, Purchases, Returns, and Stock Removals</p>
+            </div>
+            <div class="top-bar-right">
+                <div class="notification-badge-container">
+                    <a href="alerts.html" class="notification-btn">
+                        <span class="notification-icon">🔔</span>
+                        <span class="notification-count" id="notification-count">0</span>
+                    </a>
+                </div>
+                <div class="current-date" id="current-date-display">...</div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            <!-- Alert Container -->
+            <div id="alert-container"></div>
+
+            <!-- Quick Stats -->
+            <div class="metrics-grid">
+                <div class="metric-card card-green">
+                    <div class="metric-icon">🛒</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-sales">0</h3>
+                        <p class="metric-label">Total Sales</p>
+                        <span class="metric-change positive" id="sales-amount">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-blue">
+                    <div class="metric-icon">📥</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-purchases">0</h3>
+                        <p class="metric-label">Stock Added</p>
+                        <span class="metric-change positive" id="purchase-items">0 items</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-orange">
+                    <div class="metric-icon">↩️</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-returns">0</h3>
+                        <p class="metric-label">Returns</p>
+                        <span class="metric-change warning" id="return-amount">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-purple">
+                    <div class="metric-icon">🗑️</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-removals">0</h3>
+                        <p class="metric-label">Removals</p>
+                        <span class="metric-change positive" id="removal-items">0 items</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="sales">💰 Record Sale</button>
+                <button class="tab" data-tab="purchases">📥 Add Stock</button>
+                <button class="tab" data-tab="returns">↩️ Process Return</button>
+                <button class="tab" data-tab="removals">🗑️ Remove Stock</button>
+                <button class="tab" data-tab="history">📋 History</button>
+            </div>
+
+            <!-- SALES TAB -->
+            <div id="sales-tab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🛒 Record New Sale</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="sale-form" class="transaction-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="sale-client" class="form-label">Client (Optional)</label>
+                                    <select id="sale-client" class="form-control">
+                                        <option value="">Walk-in Customer</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sale-payment-method" class="form-label">Payment Method</label>
+                                    <select id="sale-payment-method" class="form-control" required>
+                                        <option value="cash">Cash</option>
+                                        <option value="card">Card</option>
+                                        <option value="mobile">Mobile Payment</option>
+                                        <option value="credit">Credit</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sale-discount" class="form-label">Discount (%)</label>
+                                    <input type="number" id="sale-discount" class="form-control" placeholder="0" min="0" max="100" step="0.01">
+                                </div>
+                            </div>
+
+                            <div class="divider"></div>
+                            <h3 class="section-title">Items to Sell</h3>
+                            
+                            <div class="sale-items-container">
+                                <div class="sale-item-row" id="sale-item-template">
+                                    <div class="form-group">
+                                        <label class="form-label">Stock Item</label>
+                                        <select class="form-control sale-stock-select" required>
+                                            <option value="">Select stock item...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Quantity</label>
+                                        <input type="number" class="form-control sale-quantity" placeholder="1" min="1" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Unit Price</label>
+                                        <input type="number" class="form-control sale-unit-price" placeholder="0.00" step="0.01" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Subtotal</label>
+                                        <input type="number" class="form-control sale-subtotal" placeholder="0.00" step="0.01" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Action</label>
+                                        <button type="button" class="btn btn-danger btn-sm remove-sale-item">Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-secondary" id="add-sale-item">+ Add Another Item</button>
+
+                            <div class="sale-summary">
+                                <div class="summary-row">
+                                    <span>Subtotal:</span>
+                                    <span id="sale-subtotal-display">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Discount:</span>
+                                    <span id="sale-discount-display">$0.00</span>
+                                </div>
+                                <div class="summary-row total-row">
+                                    <span><strong>Total:</strong></span>
+                                    <span id="sale-total-display"><strong>$0.00</strong></span>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">Complete Sale</button>
+                        </form>
+                        <pre id="sale-response" class="response-pre"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PURCHASES TAB (Stock Addition) -->
+            <div id="purchases-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📥 Add Stock (Purchase)</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="purchase-form" class="transaction-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="purchase-product" class="form-label">Product</label>
+                                    <select id="purchase-product" class="form-control" required>
+                                        <option value="">Select a product...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-supplier" class="form-label">Supplier</label>
+                                    <select id="purchase-supplier" class="form-control" required>
+                                        <option value="">Select a supplier...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="purchase-quantity" class="form-label">Quantity</label>
+                                    <input type="number" id="purchase-quantity" class="form-control" placeholder="100" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-cost-price" class="form-label">Cost Price (per unit)</label>
+                                    <input type="number" step="0.01" id="purchase-cost-price" class="form-control" placeholder="500.00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-selling-price" class="form-label">Selling Price</label>
+                                    <input type="number" step="0.01" id="purchase-selling-price" class="form-control" placeholder="699.00" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="purchase-location" class="form-label">Storage Location</label>
+                                    <input type="text" id="purchase-location" class="form-control" placeholder="Warehouse A, Shelf 5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-expiration" class="form-label">Expiration Date (if applicable)</label>
+                                    <input type="date" id="purchase-expiration" class="form-control">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Add Stock</button>
+                        </form>
+                        <pre id="purchase-response" class="response-pre"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RETURNS TAB -->
+            <div id="returns-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">↩️ Process Customer Return</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="return-form" class="transaction-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="return-stock" class="form-label">Stock Item</label>
+                                    <select id="return-stock" class="form-control" required>
+                                        <option value="">Select returned item...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="return-quantity" class="form-label">Quantity Returned</label>
+                                    <input type="number" id="return-quantity" class="form-control" placeholder="1" min="1" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="return-reason" class="form-label">Reason for Return</label>
+                                    <select id="return-reason" class="form-control" required>
+                                        <option value="">Select reason...</option>
+                                        <option value="defective">Defective/Damaged</option>
+                                        <option value="wrong_item">Wrong Item</option>
+                                        <option value="not_satisfied">Customer Not Satisfied</option>
+                                        <option value="warranty">Warranty Claim</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label checkbox-container">
+                                        <input type="checkbox" id="return-restock" checked>
+                                        <span class="checkbox-label">Add back to stock</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="return-notes" class="form-label">Additional Notes</label>
+                                <textarea id="return-notes" class="form-control" rows="3" placeholder="Enter any additional details..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Process Return</button>
+                        </form>
+                        <pre id="return-response" class="response-pre"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REMOVALS TAB -->
+            <div id="removals-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🗑️ Remove Stock</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="removal-form" class="transaction-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="removal-stock" class="form-label">Stock Item</label>
+                                    <select id="removal-stock" class="form-control" required>
+                                        <option value="">Select item to remove...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="removal-quantity" class="form-label">Quantity to Remove</label>
+                                    <input type="number" id="removal-quantity" class="form-control" placeholder="1" min="1" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="removal-reason" class="form-label">Reason for Removal</label>
+                                    <select id="removal-reason" class="form-control" required>
+                                        <option value="">Select reason...</option>
+                                        <option value="damaged">Damaged</option>
+                                        <option value="expired">Expired</option>
+                                        <option value="waste">Waste/Spoiled</option>
+                                        <option value="warranty">Warranty Repair</option>
+                                        <option value="internal_use">Internal Use</option>
+                                        <option value="theft">Theft/Loss</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="removal-notes" class="form-label">Notes</label>
+                                <textarea id="removal-notes" class="form-control" rows="3" placeholder="Describe the reason for removal..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Remove from Stock</button>
+                        </form>
+                        <pre id="removal-response" class="response-pre"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HISTORY TAB -->
+            <div id="history-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📋 Transaction History</h2>
+                        <div class="card-header-actions">
+                            <input type="text" id="history-search" class="form-control" placeholder="Search..." style="width: 200px; margin-right: 10px;">
+                            <select id="history-type-filter" class="form-control" style="width: 150px; margin-right: 10px;">
+                                <option value="all">All Types</option>
+                                <option value="sale">Sales</option>
+                                <option value="purchase">Purchases</option>
+                                <option value="return">Returns</option>
+                                <option value="removal">Removals</option>
+                            </select>
+                            <input type="date" id="history-date-filter" class="form-control" style="width: 160px;">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="transaction-history" class="transaction-list">
+                            <div class="empty-state">
+                                <span class="empty-icon">📋</span>
+                                <p>Loading transaction history...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="JavaScript/transactions.js"></script>
+</body>
+</html>

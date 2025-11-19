@@ -1,0 +1,300 @@
+/* ==========================================
+   TRANSACTIONS PAGE STYLES
+   ========================================== */
+
+/* Transaction Form Layout */
+.transaction-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+/* Sale Items Container */
+.sale-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.sale-item-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    transition: all 0.3s ease;
+}
+
+.sale-item-row:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.sale-item-row .form-group {
+    margin-bottom: 0;
+}
+
+.sale-item-row .form-label {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+}
+
+/* Sale Summary */
+.sale-summary {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #90caf9;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 1rem;
+    color: #0d47a1;
+}
+
+.summary-row:not(:last-child) {
+    border-bottom: 1px solid rgba(13, 71, 161, 0.1);
+}
+
+.total-row {
+    font-size: 1.3rem;
+    color: #1565c0;
+    padding-top: 16px;
+    margin-top: 8px;
+    border-top: 2px solid #1976D2;
+}
+
+/* Transaction List (History) */
+.transaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: white;
+    border: 1px solid var(--border-light);
+    animation: slideInLeft 0.3s ease forwards;
+    opacity: 0;
+}
+
+.transaction-item:hover {
+    background: var(--bg-secondary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateX(4px);
+}
+
+.transaction-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.icon-sale {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+}
+
+.icon-purchase {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+}
+
+.icon-return {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+}
+
+.icon-removal {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+}
+
+.transaction-details {
+    flex: 1;
+}
+
+.transaction-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+.transaction-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.transaction-amount {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.transaction-amount.positive {
+    color: var(--success-color);
+}
+
+.transaction-amount.negative {
+    color: var(--primary-color);
+}
+
+/* Section Title */
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-light);
+}
+
+/* Checkbox in Form */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+.checkbox-container input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.checkbox-label {
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Textarea Enhancement */
+textarea.form-control {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Enhanced Button Spacing */
+.btn-block + .response-pre {
+    margin-top: 20px;
+}
+
+/* Remove Sale Item Button */
+.remove-sale-item {
+    white-space: nowrap;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .sale-item-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .sale-item-row .form-group:nth-child(1) {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .sale-item-row {
+        grid-template-columns: 1fr;
+    }
+
+    .sale-item-row .form-group {
+        grid-column: 1 !important;
+    }
+
+    .card-header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .card-header-actions .form-control {
+        width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 10px;
+    }
+
+    .transaction-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .transaction-amount {
+        align-self: flex-end;
+    }
+
+    .sale-summary {
+        padding: 16px;
+    }
+
+    .summary-row {
+        font-size: 0.95rem;
+    }
+
+    .total-row {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .transaction-form {
+        gap: 16px;
+    }
+
+    .sale-items-container {
+        padding: 12px;
+    }
+
+    .sale-item-row {
+        padding: 12px;
+    }
+}
+
+/* Animation */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items - SmartInventory</title>
+    <link rel="stylesheet" href="CSS/main.css">
+    <link rel="stylesheet" href="CSS/dashboard.css">
+    <link rel="stylesheet" href="CSS/items.css">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="images/logo.png" alt="Logo" class="sidebar-logo">
+            <h2 class="sidebar-title">SmartInventory</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="items.html" class="nav-item active">
+                <span class="nav-icon">📦</span>
+                <span class="nav-text">Items</span>
+            </a>
+            <a href="transactions.html" class="nav-item">
+                <span class="nav-icon">💳</span>
+                <span class="nav-text">Transactions</span>
+            </a>
+            <a href="reports.html" class="nav-item">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Reports</span>
+            </a>
+            <a href="suppliers.html" class="nav-item">
+                <span class="nav-icon">🏢</span>
+                <span class="nav-text">Suppliers</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="sidebar-avatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="sidebar-username">Username</div>
+                    <div class="user-role" id="sidebar-role">User</div>
+                </div>
+            </div>
+            <a href="#" id="logout-btn" class="logout-btn">
+                <span class="nav-icon">🚪</span>
+                <span class="nav-text">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <h1 class="page-title">Item Management</h1>
+                <p class="page-subtitle">Manage Products, Stock, Suppliers, and Categories</p>
+            </div>
+            <div class="top-bar-right">
+                <div class="notification-badge-container">
+                    <a href="alerts.html" class="notification-btn">
+                        <span class="notification-icon">🔔</span>
+                        <span class="notification-count" id="notification-count">0</span>
+                    </a>
+                </div>
+                <div class="current-date" id="current-date-display">...</div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            <!-- Alert Container -->
+            <div id="alert-container"></div>
+
+            <!-- Quick Stats -->
+            <div class="metrics-grid">
+                <div class="metric-card card-blue">
+                    <div class="metric-icon">📦</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-products">0</h3>
+                        <p class="metric-label">Total Products</p>
+                        <span class="metric-change positive" id="product-change">View all</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-green">
+                    <div class="metric-icon">🏢</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-suppliers">0</h3>
+                        <p class="metric-label">Total Suppliers</p>
+                        <span class="metric-change positive" id="supplier-change">View all</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-purple">
+                    <div class="metric-icon">📂</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-categories">0</h3>
+                        <p class="metric-label">Categories</p>
+                        <span class="metric-change positive" id="category-change">View all</span>
+                    </div>
+                </div>
+
+                <div class="metric-card card-orange">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-content">
+                        <h3 class="metric-value" id="total-stock-items">0</h3>
+                        <p class="metric-label">Stock Items</p>
+                        <span class="metric-change positive" id="stock-change">View all</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="products">Products</button>
+                <button class="tab" data-tab="stock">Stock</button>
+                <button class="tab" data-tab="suppliers">Suppliers</button>
+                <button class="tab" data-tab="categories">Categories</button>
+            </div>
+
+            <!-- PRODUCTS TAB -->
+            <div id="products-tab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">➕ Add New Product</h2>
+                        <button class="btn btn-secondary btn-sm" id="toggle-add-product">Show/Hide</button>
+                    </div>
+                    <div class="card-body" id="add-product-section">
+                        <form id="add-product-form" class="management-form">
+                            <div class="form-group">
+                                <label for="product-name" class="form-label">Product Name</label>
+                                <input type="text" id="product-name" class="form-control" placeholder="e.g., iPhone 14 Pro" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-brand" class="form-label">Brand</label>
+                                <input type="text" id="product-brand" class="form-control" placeholder="e.g., Apple">
+                            </div>
+                            <div class="form-group">
+                                <label for="product-description" class="form-label">Description</label>
+                                <input type="text" id="product-description" class="form-control" placeholder="Product description">
+                            </div>
+                            <div class="form-group">
+                                <label for="product-warranty" class="form-label">Warranty (Months)</label>
+                                <input type="number" id="product-warranty" class="form-control" placeholder="12">
+                            </div>
+                            <div class="form-group">
+                                <label for="product-category" class="form-label">Category</label>
+                                <select id="product-category" class="form-control" required>
+                                    <option value="">Select a category...</option>
+                                </select>
+                                <small class="form-text">Create categories in the Categories tab first</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Product</button>
+                        </form>
+                        <pre id="product-response" class="response-pre"></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📦 All Products</h2>
+                        <div class="card-header-actions">
+                            <input type="text" id="product-search" class="form-control" placeholder="Search products..." style="width: 250px; margin-right: 10px;">
+                            <select id="product-category-filter" class="form-control" style="width: 200px;">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="products-list" class="item-list">
+                            <div class="empty-state">
+                                <span class="empty-icon">📋</span>
+                                <p>Loading products...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STOCK TAB -->
+            <div id="stock-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">➕ Add New Stock</h2>
+                        <button class="btn btn-secondary btn-sm" id="toggle-add-stock">Show/Hide</button>
+                    </div>
+                    <div class="card-body" id="add-stock-section">
+                        <form id="add-stock-form" class="management-form">
+                            <div class="form-group">
+                                <label for="stock-product" class="form-label">Product</label>
+                                <select id="stock-product" class="form-control" required>
+                                    <option value="">Select a product...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="stock-supplier" class="form-label">Supplier</label>
+                                <select id="stock-supplier" class="form-control" required>
+                                    <option value="">Select a supplier...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="stock-quantity" class="form-label">Quantity</label>
+                                <input type="number" id="stock-quantity" class="form-control" placeholder="100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="stock-cost-price" class="form-label">Cost Price</label>
+                                <input type="number" step="0.01" id="stock-cost-price" class="form-control" placeholder="500.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="stock-selling-price" class="form-label">Selling Price</label>
+                                <input type="number" step="0.01" id="stock-selling-price" class="form-control" placeholder="699.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="stock-location" class="form-label">Location</label>
+                                <input type="text" id="stock-location" class="form-control" placeholder="Warehouse A, Shelf 5">
+                            </div>
+                            <div class="form-group">
+                                <label for="stock-expiration" class="form-label">Expiration Date</label>
+                                <input type="date" id="stock-expiration" class="form-control">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Stock</button>
+                        </form>
+                        <pre id="stock-response" class="response-pre"></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📊 All Stock Items</h2>
+                        <div class="card-header-actions">
+                            <input type="text" id="stock-search" class="form-control" placeholder="Search stock..." style="width: 250px; margin-right: 10px;">
+                            <select id="stock-filter" class="form-control" style="width: 200px;">
+                                <option value="all">All Stock</option>
+                                <option value="low">Low Stock</option>
+                                <option value="out">Out of Stock</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="stock-list" class="item-list">
+                            <div class="empty-state">
+                                <span class="empty-icon">📋</span>
+                                <p>Loading stock...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUPPLIERS TAB -->
+            <div id="suppliers-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">➕ Add New Supplier</h2>
+                        <button class="btn btn-secondary btn-sm" id="toggle-add-supplier">Show/Hide</button>
+                    </div>
+                    <div class="card-body" id="add-supplier-section">
+                        <form id="add-supplier-form" class="management-form">
+                            <div class="form-group">
+                                <label for="supplier-name" class="form-label">Supplier Name</label>
+                                <input type="text" id="supplier-name" class="form-control" placeholder="e.g., Tech Distributors Inc." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="supplier-contact-person" class="form-label">Contact Person</label>
+                                <input type="text" id="supplier-contact-person" class="form-control" placeholder="John Doe">
+                            </div>
+                            <div class="form-group">
+                                <label for="supplier-phone" class="form-label">Phone</label>
+                                <input type="tel" id="supplier-phone" class="form-control" placeholder="+1-234-567-8900">
+                            </div>
+                            <div class="form-group">
+                                <label for="supplier-email" class="form-label">Email</label>
+                                <input type="email" id="supplier-email" class="form-control" placeholder="contact@supplier.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="supplier-address" class="form-label">Address</label>
+                                <input type="text" id="supplier-address" class="form-control" placeholder="123 Business St, City">
+                            </div>
+                            <div class="form-group">
+                                <label for="supplier-fees" class="form-label">Additional Fees</label>
+                                <input type="number" step="0.01" id="supplier-fees" class="form-control" placeholder="0.00">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Supplier</button>
+                        </form>
+                        <pre id="supplier-response" class="response-pre"></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🏢 All Suppliers</h2>
+                        <input type="text" id="supplier-search" class="form-control" placeholder="Search suppliers..." style="width: 250px;">
+                    </div>
+                    <div class="card-body">
+                        <div id="suppliers-list" class="item-list">
+                            <div class="empty-state">
+                                <span class="empty-icon">📋</span>
+                                <p>Loading suppliers...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATEGORIES TAB -->
+            <div id="categories-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">➕ Add New Category</h2>
+                        <button class="btn btn-secondary btn-sm" id="toggle-add-category">Show/Hide</button>
+                    </div>
+                    <div class="card-body" id="add-category-section">
+                        <form id="add-category-form" class="management-form">
+                            <div class="form-group">
+                                <label for="category-name" class="form-label">Category Name</label>
+                                <input type="text" id="category-name" class="form-control" placeholder="e.g., Electronics" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="category-desc" class="form-label">Description</label>
+                                <input type="text" id="category-desc" class="form-control" placeholder="Category description">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Category</button>
+                        </form>
+                        <pre id="category-response" class="response-pre"></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📂 All Categories</h2>
+                        <input type="text" id="category-search" class="form-control" placeholder="Search categories..." style="width: 250px;">
+                    </div>
+                    <div class="card-body">
+                        <div id="categories-list" class="item-list">
+                            <div class="empty-state">
+                                <span class="empty-icon">📋</span>
+                                <p>Loading categories...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="JavaScript/items.js"></script>
+</body>
+</html>
