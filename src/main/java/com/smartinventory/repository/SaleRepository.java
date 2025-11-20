@@ -108,14 +108,16 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     /**
      * Find today's sales
      */
-    @Query("SELECT s FROM Sale s WHERE DATE(s.saleDate) = CURRENT_DATE")
+    @Query("SELECT s FROM Sale s WHERE " +
+            "FUNCTION('DATE', s.saleDate) = FUNCTION('DATE', CURRENT_TIMESTAMP)")
     List<Sale> findTodaySales();
 
     /**
      * Find sales by month and year
      */
     @Query("SELECT s FROM Sale s WHERE " +
-            "YEAR(s.saleDate) = :year AND MONTH(s.saleDate) = :month")
+            "FUNCTION('strftime', '%Y', s.saleDate) = CAST(:year AS string) AND " +
+            "FUNCTION('strftime', '%m', s.saleDate) = CASE WHEN :month < 10 THEN CONCAT('0', CAST(:month AS string)) ELSE CAST(:month AS string) END")
     List<Sale> findSalesByMonthAndYear(
             @Param("year") int year,
             @Param("month") int month
