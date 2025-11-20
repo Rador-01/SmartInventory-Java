@@ -2,6 +2,11 @@ package com.smartinventory;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Main Application Class
@@ -28,12 +33,26 @@ public class SmartInventoryApplication {
         // - Sets up all REST endpoints
         // - Configures security
         SpringApplication.run(SmartInventoryApplication.class, args);
+    }
 
-        System.out.println("\n========================================");
-        System.out.println("SmartInventory API is running!");
-        System.out.println("Server: http://localhost:5001");
-        System.out.println("API Base: http://localhost:5001/api");
-        System.out.println("========================================\n");
+    /**
+     * Component that prints the startup message with the actual port
+     */
+    @Component
+    public static class StartupListener {
+
+        @Autowired
+        private Environment environment;
+
+        @EventListener(ApplicationReadyEvent.class)
+        public void onApplicationReady() {
+            String port = environment.getProperty("local.server.port");
+            System.out.println("\n========================================");
+            System.out.println("SmartInventory API is running!");
+            System.out.println("Server: http://localhost:" + port);
+            System.out.println("API Base: http://localhost:" + port + "/api");
+            System.out.println("========================================\n");
+        }
     }
 }
 

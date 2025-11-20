@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIG ---
-    const API_BASE_URL = 'http://127.0.0.1:5001/api';
+    const API_BASE_URL = 'http://127.0.0.1:5002/api';
     const TOKEN_KEY = 'smart_inventory_token';
     const USER_KEY = 'smart_inventory_user';
 
