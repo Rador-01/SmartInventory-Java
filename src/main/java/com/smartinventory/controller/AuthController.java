@@ -2,6 +2,7 @@ package com.smartinventory.controller;
 
 import com.smartinventory.model.User;
 import com.smartinventory.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -20,6 +21,8 @@ import java.util.Map;
  * Endpoints:
  * POST /api/auth/register - Register new user
  * POST /api/auth/login - Login user
+ * POST /api/auth/logout - Logout current user
+ * POST /api/auth/logout-all - Logout from all devices
  * GET /api/auth/me - Get current user info
  */
 @RestController
@@ -54,7 +57,7 @@ public class AuthController {
      * }
      */
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         try {
             // Register user
             User user = authService.register(
@@ -65,7 +68,7 @@ public class AuthController {
             );
 
             // Generate token
-            String token = authService.login(request.getUsername(), request.getPassword());
+            String token = authService.login(request.getUsername(), request.getPassword(), httpRequest);
 
             // Create response
             Map<String, Object> response = new HashMap<>();
@@ -100,10 +103,10 @@ public class AuthController {
      * }
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         try {
             // Login and get token
-            String token = authService.login(request.getUsername(), request.getPassword());
+            String token = authService.login(request.getUsername(), request.getPassword(), httpRequest);
 
             // Get user info
             User user = authService.getUserByUsername(request.getUsername());
@@ -120,6 +123,91 @@ public class AuthController {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+    }
+
+    /**
+     * POST /api/auth/logout
+     * Logout current user (revoke token)
+     *
+     * Headers:
+     * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+     *
+     * Response:
+     * {
+     *   "message": "Logout successful"
+     * }
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            // Validate Authorization header
+            if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.length() <= 7) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Invalid or missing Authorization header");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            }
+
+            // Extract token
+            String token = authHeader.substring(7);
+
+            // Logout (revoke token)
+            boolean success = authService.logout(token);
+
+            if (success) {
+                Map<String, String> response = new HashMap<>();
+                response.put("message", "Logout successful");
+                return ResponseEntity.ok(response);
+            } else {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Token not found or already revoked");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            }
+
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * POST /api/auth/logout-all
+     * Logout from all devices (revoke all user tokens)
+     *
+     * Headers:
+     * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+     *
+     * Response:
+     * {
+     *   "message": "Logged out from all devices"
+     * }
+     */
+    @PostMapping("/logout-all")
+    public ResponseEntity<?> logoutAllDevices(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            // Validate Authorization header
+            if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.length() <= 7) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Invalid or missing Authorization header");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            }
+
+            // Extract token and validate
+            String token = authHeader.substring(7);
+            User user = authService.validateToken(token);
+
+            // Logout from all devices
+            authService.logoutAllDevices(user.getId());
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Logged out from all devices");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
