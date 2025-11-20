@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('sidebar-username').textContent = user.username;
         document.getElementById('top-bar-username').textContent = user.username;
         document.getElementById('sidebar-avatar').textContent = user.username.charAt(0).toUpperCase();
-        document.getElementById('sidebar-role').textContent = 'User';
+        document.getElementById('sidebar-role').textContent = user.role || 'User';
 
         // Set current date
         document.getElementById('current-date-display').textContent = new Date().toLocaleDateString('en-US', {
@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Bind events
         document.getElementById('logout-btn').addEventListener('click', handleLogout);
-        document.getElementById('time-filter').addEventListener('change', handleTimeFilter);
 
         // Load dashboard data
         loadDashboardData();
@@ -59,7 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- API HELPER ---
     async function fetchFromApi(endpoint) {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
         });
         if (!response.ok) {
             throw new Error(`Failed to fetch ${endpoint}: ${response.statusText}`);
@@ -71,22 +73,25 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDashboardData() {
         try {
             // Fetch all required data in parallel
-            const [summaryData, allStock, allSales, performanceData] = await Promise.all([
-                fetchFromApi('/reports/summary'),
-                fetchFromApi('/stocks'),
-                fetchFromApi('/sales'),
-                fetchFromApi('/reports/performance_by_product') // FIX: Correct endpoint
+            const [allProducts, allSales] = await Promise.all([
+                fetchFromApi('/products'),
+                fetchFromApi('/sales')
             ]);
 
-            // Pass data to render functions
-            updateMetricsCards(summaryData, allStock, allSales);
-            renderLowStockAlerts(allStock);
-            renderRecentTransactions(allSales);
-            renderTopProducts(performanceData);
-            renderStockStatus(allStock);
+            // Update metrics cards
+            updateMetricsCards(allProducts, allSales);
 
-            // Update notification count from the 'allStock' data we already fetched
-            const lowStockCount = allStock.filter(s => s.quantity > 0 && s.quantity < 10).length;
+            // Render sections
+            renderLowStockAlerts(allProducts);
+            renderRecentTransactions(allSales);
+            renderTopProducts(allSales, allProducts);
+            renderStockStatus(allProducts);
+
+            // Update notification count
+            const lowStockCount = allProducts.filter(p => {
+                const stock = p.currentStock || 0;
+                return stock > 0 && stock < 10;
+            }).length;
             document.getElementById('notification-count').textContent = lowStockCount;
 
         } catch (error) {
@@ -96,34 +101,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- UPDATE METRIC CARDS ---
-    // FIX: This function now gets all data it needs and maps it to the correct HTML
-    function updateMetricsCards(summary, stocks, sales) {
-        
-        // 1. Total Products (from /api/stocks)
-        animateValue('total-products', 0, stocks.length, 1500);
-        document.getElementById('new-products').textContent = `+0 this week`; // (Mocked)
+    function updateMetricsCards(products, sales) {
+        // 1. Total Products
+        animateValue('total-products', 0, products.length, 1500);
+        document.getElementById('new-products').textContent = `+0 this week`;
 
-        // 2. Low Stock (from /api/stocks)
-        const lowStockCount = stocks.filter(s => s.quantity > 0 && s.quantity < 10).length;
+        // 2. Low Stock
+        const lowStockCount = products.filter(p => {
+            const stock = p.currentStock || 0;
+            return stock > 0 && stock < 10;
+        }).length;
         animateValue('low-stock-count', 0, lowStockCount, 1500);
 
-        // 3. Today's Revenue (from /api/reports/summary)
-        const revenue = parseFloat(summary.total_revenue).toFixed(2);
-        document.getElementById('today-revenue').textContent = `$${revenue}`;
-        document.getElementById('revenue-change').textContent = `+0% vs yesterday`; // (Mocked)
+        // 3. Today's Revenue
+        const today = new Date().toDateString();
+        const todaysRevenue = sales
+            .filter(s => s.status === 'PAID' && new Date(s.saleDate).toDateString() === today)
+            .reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+        document.getElementById('today-revenue').textContent = `$${todaysRevenue.toFixed(2)}`;
 
-        // 4. Total Sales (from /api/sales)
-        animateValue('total-sales', 0, sales.length, 1500);
-        document.getElementById('sales-count').textContent = `${sales.length} transactions`;
+        // 4. Total Sales
+        const totalSales = sales.filter(s => s.status === 'PAID').length;
+        animateValue('total-sales', 0, totalSales, 1500);
+        document.getElementById('sales-count').textContent = `${totalSales} transactions`;
     }
 
     // --- RENDER LOW STOCK ALERTS ---
-    // FIX: Changed from 'fetch' to 'render' - it now receives data
-    function renderLowStockAlerts(stocks) {
-        const lowStockItems = stocks.filter(s => s.quantity < 10 && s.quantity > 0).slice(0, 5); // Get first 5
-        
+    function renderLowStockAlerts(products) {
+        const lowStockItems = products.filter(p => {
+            const stock = p.currentStock || 0;
+            return stock < 10 && stock > 0;
+        }).slice(0, 5);
+
         const container = document.getElementById('low-stock-list');
-        
+
         if (lowStockItems.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
@@ -133,14 +144,14 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             return;
         }
-        
+
         container.innerHTML = `<div class="alert-list">${lowStockItems.map((item, index) => `
             <div class="alert-item" style="animation-delay: ${index * 0.05}s">
                 <div class="alert-item-icon">📦</div>
                 <div class="alert-item-content">
-                    <div class="alert-item-name">${item.product_name || 'Unknown Product'}</div>
+                    <div class="alert-item-name">${item.name || 'Unknown Product'}</div>
                     <div class="alert-item-info">
-                        Stock: <span class="text-danger">${item.quantity}</span> / Threshold: 10
+                        Stock: <span class="text-danger">${item.currentStock || 0}</span> / Threshold: 10
                     </div>
                 </div>
                 <a href="items.html?action=restock&id=${item.id}" class="btn-reorder">Reorder</a>
@@ -149,12 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- RENDER RECENT TRANSACTIONS ---
-    // FIX: Changed from 'fetch' to 'render' - it now receives data
     function renderRecentTransactions(sales) {
-        const recentSales = sales.slice(0, 8); // Get top 8 recent
-        
+        const recentSales = sales.slice(0, 8);
+
         const container = document.getElementById('recent-transactions');
-        
+
         if (recentSales.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
@@ -164,34 +174,50 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             return;
         }
-        
-        const getIcon = (type) => '🛒'; // Only sales for now
-        const getIconClass = (type) => 'icon-sale';
-        
+
         container.innerHTML = `<div class="transaction-list">${recentSales.map((trans, index) => `
             <div class="transaction-item" style="animation-delay: ${index * 0.03}s">
-                <div class="transaction-icon ${getIconClass('sale')}">
-                    ${getIcon('sale')}
-                </div>
+                <div class="transaction-icon icon-sale">🛒</div>
                 <div class="transaction-details">
-                    <div class="transaction-name">Sale #${trans.id} (${trans.items.length} items)</div>
-                    <div class="transaction-meta">${new Date(trans.sale_date).toLocaleString()} • ${trans.salesperson_username}</div>
+                    <div class="transaction-name">Sale #${trans.id} (${trans.items?.length || 0} items)</div>
+                    <div class="transaction-meta">${new Date(trans.saleDate).toLocaleString()} • ${trans.status}</div>
                 </div>
                 <div class="transaction-amount positive">
-                    +$${parseFloat(trans.total_amount).toFixed(2)}
+                    +$${parseFloat(trans.totalAmount || 0).toFixed(2)}
                 </div>
             </div>
         `).join('')}</div>`;
     }
 
     // --- RENDER TOP PRODUCTS ---
-    // FIX: Changed from 'fetch' to 'render' and uses correct data
-    function renderTopProducts(topProductsData) {
-        const top5Products = topProductsData.slice(0, 5); // Get top 5
+    function renderTopProducts(sales, products) {
+        // Calculate product sales
+        const productSales = {};
+        sales.forEach(sale => {
+            if (sale.items && sale.status === 'PAID') {
+                sale.items.forEach(item => {
+                    const productId = item.product?.id || item.productId;
+                    if (!productSales[productId]) {
+                        productSales[productId] = {
+                            quantity: 0,
+                            revenue: 0,
+                            name: item.product?.name || 'Unknown'
+                        };
+                    }
+                    productSales[productId].quantity += item.quantity || 0;
+                    productSales[productId].revenue += item.subtotal || 0;
+                });
+            }
+        });
+
+        // Convert to array and sort
+        const topProducts = Object.values(productSales)
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5);
 
         const container = document.getElementById('top-products-list');
-        
-        if (top5Products.length === 0) {
+
+        if (topProducts.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <span class="empty-icon">📊</span>
@@ -200,8 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             return;
         }
-        
-        container.innerHTML = `<div class="top-products-list">${top5Products.map((product, index) => `
+
+        container.innerHTML = `<div class="top-products-list">${topProducts.map((product, index) => `
             <div class="top-product-item" style="animation-delay: ${index * 0.05}s">
                 <div class="product-rank">${index + 1}</div>
                 <div class="product-info">
@@ -214,51 +240,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- RENDER STOCK STATUS ---
-    // FIX: Changed from 'fetch' to 'render' and uses 'allStock' data
-    function renderStockStatus(stocks) {
-        // Calculate status counts
-        const inStock = stocks.filter(s => s.quantity >= 10).length;
-        const lowStock = stocks.filter(s => s.quantity > 0 && s.quantity < 10).length;
-        const outOfStock = stocks.filter(s => s.quantity === 0).length;
-        // Check for expiration date
-        const expired = stocks.filter(s => s.expiration_date && new Date(s.expiration_date) < new Date()).length;
-        
-        // Update UI with animation
+    function renderStockStatus(products) {
+        const inStock = products.filter(p => (p.currentStock || 0) >= 10).length;
+        const lowStock = products.filter(p => {
+            const stock = p.currentStock || 0;
+            return stock > 0 && stock < 10;
+        }).length;
+        const outOfStock = products.filter(p => (p.currentStock || 0) === 0).length;
+        const expired = 0; // Not tracking expiration in current backend
+
         animateValue('in-stock-count', 0, inStock, 1500);
         animateValue('low-stock-status', 0, lowStock, 1500);
         animateValue('out-of-stock-count', 0, outOfStock, 1500);
         animateValue('expired-count', 0, expired, 1500);
     }
 
-    // --- HANDLE TIME FILTER ---
-    // FIX: This now re-fetches just the top products and renders them
-    async function handleTimeFilter(e) {
-        const period = e.target.value;
-        const container = document.getElementById('top-products-list');
-        
-        // Add loading state
-        container.style.opacity = '0.5';
-        container.style.pointerEvents = 'none';
-        
-        try {
-            // Re-fetch only the data that needs to change
-            // Note: The period parameter isn't implemented in the API, 
-            // but this is the correct frontend structure.
-            const topProductsData = await fetchFromApi('/reports/performance_by_product');
-            renderTopProducts(topProductsData);
-        } catch (error) {
-            showAlert('Failed to refresh top products', 'error');
-        } finally {
-            container.style.opacity = '1';
-            container.style.pointerEvents = 'auto';
-        }
-    }
-
     // --- HELPER: ANIMATE VALUE ---
     function animateValue(elementId, start, end, duration) {
         const element = document.getElementById(elementId);
         if (!element) return;
-        
+
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
@@ -282,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span>${message}</span>
         `;
         container.appendChild(alert);
-        
+
         setTimeout(() => {
             alert.style.transition = 'all 0.4s ease';
             alert.style.opacity = '0';
@@ -292,6 +293,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- RUN THE APP ---
-    // FIX: Removed the broken fetchStock() call
     initPage();
 });

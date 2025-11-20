@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LOGIN FUNCTION ---
     async function handleLogin(e) {
-        e.preventDefault(); // <-- STOPS THE REFRESH
+        e.preventDefault();
         loginMessage.style.display = 'none';
         loginSubmitBtn.disabled = true;
         loginSubmitBtn.textContent = 'Signing in...';
@@ -65,9 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
             username: loginUsernameInput.value,
             password: loginPasswordInput.value
         };
-        
+
         try {
-            const response = await fetch(`${API_BASE_URL}/login`, {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -76,13 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (response.ok) {
-                // SUCCESS
-                localStorage.setItem(TOKEN_KEY, result.access_token);
+                // SUCCESS - Spring Boot returns { token, user, message }
+                localStorage.setItem(TOKEN_KEY, result.token);
                 localStorage.setItem(USER_KEY, JSON.stringify(result.user));
                 window.location.href = 'dashboard.html';
             } else {
-                // FAIL
-                showApiMessage(loginMessage, result.message || 'Invalid username or password.', 'error');
+                // FAIL - Spring Boot returns { error }
+                showApiMessage(loginMessage, result.error || 'Invalid username or password.', 'error');
             }
         } catch (error) {
             showApiMessage(loginMessage, `Network error: ${error.message}`, 'error');
@@ -94,20 +94,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- REGISTER FUNCTION ---
     async function handleRegister(e) {
-        e.preventDefault(); // <-- STOPS THE REFRESH
+        e.preventDefault();
         registerMessage.style.display = 'none';
         registerSubmitBtn.disabled = true;
         registerSubmitBtn.textContent = 'Creating Account...';
 
         const data = {
-            full_name: regFullnameInput.value,
             username: regUsernameInput.value,
             email: regEmailInput.value,
-            password: regPasswordInput.value
+            password: regPasswordInput.value,
+            role: 'USER' // Default role
         };
-        
+
         try {
-            const response = await fetch(`${API_BASE_URL}/register`, {
+            const response = await fetch(`${API_BASE_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -116,15 +116,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (response.ok) {
-                // SUCCESS
-                showApiMessage(registerMessage, 'Success! Please log in.', 'success');
-                // Switch back to login tab
-                showLoginTab.click();
-                // Clear register form
-                registerForm.reset();
+                // SUCCESS - Spring Boot returns { token, user, message }
+                showApiMessage(registerMessage, 'Success! Logging you in...', 'success');
+
+                // Auto-login after registration
+                localStorage.setItem(TOKEN_KEY, result.token);
+                localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
             } else {
-                // FAIL
-                showApiMessage(registerMessage, result.message || 'An error occurred.', 'error');
+                // FAIL - Spring Boot returns { error }
+                showApiMessage(registerMessage, result.error || 'Registration failed.', 'error');
             }
         } catch (error) {
             showApiMessage(registerMessage, `Network error: ${error.message}`, 'error');
