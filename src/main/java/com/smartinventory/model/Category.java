@@ -1,5 +1,6 @@
 package com.smartinventory.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class Category {
     // CascadeType.ALL = if we delete a category, delete all its products too
     // orphanRemoval = if we remove a product from this list, delete it from DB
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Product> products = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
