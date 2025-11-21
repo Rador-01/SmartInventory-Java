@@ -1,5 +1,6 @@
 package com.smartinventory.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -53,10 +54,12 @@ public class Product {
 
     // ONE PRODUCT HAS MANY STOCK RECORDS (stock movements)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonBackReference("product-stocks")
     private List<Stock> stocks = new ArrayList<>();
 
     // ONE PRODUCT CAN BE IN MANY SALE ITEMS
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @JsonBackReference("product-saleitems")
     private List<SaleItem> saleItems = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)

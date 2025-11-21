@@ -1,5 +1,6 @@
 package com.smartinventory.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -25,6 +26,7 @@ public class SaleItem {
     // MANY SALE ITEMS BELONG TO ONE PRODUCT
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
+    @JsonManagedReference("product-saleitems")
     private Product product;
 
     // Quantity of this product sold

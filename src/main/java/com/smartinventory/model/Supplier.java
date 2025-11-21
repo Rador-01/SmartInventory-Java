@@ -1,5 +1,6 @@
 package com.smartinventory.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ public class Supplier {
 
     // ONE SUPPLIER HAS MANY PRODUCTS
     @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Product> products = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
