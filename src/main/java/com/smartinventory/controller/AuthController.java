@@ -56,7 +56,7 @@ public class AuthController {
      *   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
      * }
      */
-    @PostMapping("/register")
+    @PostMapping(value = "/register", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         try {
             // Register user
@@ -102,7 +102,7 @@ public class AuthController {
      *   "user": { ... }
      * }
      */
-    @PostMapping("/login")
+    @PostMapping(value = "/login", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         try {
             // Login and get token
