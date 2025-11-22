@@ -2,7 +2,6 @@ package com.smartinventory.service;
 
 import com.smartinventory.model.User;
 import com.smartinventory.repository.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,7 +26,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final TokenBlacklistService tokenBlacklistService;
 
     /**
      * Constructor injection (recommended way)
@@ -36,12 +34,10 @@ public class AuthService {
     @Autowired
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtService jwtService,
-                       TokenBlacklistService tokenBlacklistService) {
+                       JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     // ============================================
@@ -88,11 +84,10 @@ public class AuthService {
      *
      * @param username - Username or email
      * @param password - Plain password
-     * @param request - HTTP request (for storing token metadata)
      * @return JWT token if successful
      * @throws RuntimeException if credentials are invalid
      */
-    public String login(String username, String password, HttpServletRequest request) {
+    public String login(String username, String password) {
         // 1. Find user by username or email
         Optional<User> userOpt = userRepository.findByUsernameOrEmail(username, username);
 
@@ -107,32 +102,8 @@ public class AuthService {
             throw new RuntimeException("Invalid credentials");
         }
 
-        // 3. Generate JWT token
-        String token = jwtService.generateToken(user);
-
-        // 4. Store token for blacklisting capability
-        tokenBlacklistService.storeToken(user, token, request);
-
-        return token;
-    }
-
-    /**
-     * Logout user (revoke current token)
-     *
-     * @param token - JWT token to revoke
-     * @return true if logout successful
-     */
-    public boolean logout(String token) {
-        return tokenBlacklistService.revokeToken(token);
-    }
-
-    /**
-     * Logout from all devices (revoke all user tokens)
-     *
-     * @param userId - User ID
-     */
-    public void logoutAllDevices(Long userId) {
-        tokenBlacklistService.revokeAllUserTokens(userId);
+        // 3. Generate and return JWT token
+        return jwtService.generateToken(user);
     }
 
     /**

@@ -1,22 +1,21 @@
 package com.smartinventory.service;
 
-import com.smartinventory.dto.report.*;
 import com.smartinventory.model.*;
 import com.smartinventory.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * ReportService - Handles all report generation and analytics
+ * ReportService - Handles report generation and analytics
+ *
+ * SIMPLIFIED VERSION - Only 3 essential reports for learning:
+ * 1. Summary Metrics - Total revenue, profit, sales count
+ * 2. Product Performance - Revenue and quantity sold per product
+ * 3. Stock Status - Count of in-stock, low-stock, and out-of-stock items
  */
 @Service
 @Transactional(readOnly = true)
@@ -24,316 +23,133 @@ public class ReportService {
 
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
-    private final SupplierRepository supplierRepository;
 
     @Autowired
-    public ReportService(SaleRepository saleRepository,
-                        ProductRepository productRepository,
-                        CategoryRepository categoryRepository,
-                        SupplierRepository supplierRepository) {
+    public ReportService(SaleRepository saleRepository, ProductRepository productRepository) {
         this.saleRepository = saleRepository;
         this.productRepository = productRepository;
-        this.categoryRepository = categoryRepository;
-        this.supplierRepository = supplierRepository;
     }
 
     /**
      * Get summary metrics for a date range
+     *
+     * Returns: total revenue, total profit, number of sales
      */
-    public SummaryMetricsDTO getSummaryMetrics(LocalDateTime startDate, LocalDateTime endDate) {
+    public Map<String, Object> getSummaryMetrics(LocalDateTime startDate, LocalDateTime endDate) {
+        // Get all paid sales in date range
         List<Sale> sales = getSalesInRange(startDate, endDate);
-        List<Sale> paidSales = sales.stream()
-                .filter(s -> "PAID".equalsIgnoreCase(s.getStatus()))
-                .collect(Collectors.toList());
+        List<Sale> paidSales = new ArrayList<>();
+
+        for (Sale sale : sales) {
+            if ("PAID".equalsIgnoreCase(sale.getStatus())) {
+                paidSales.add(sale);
+            }
+        }
 
         // Calculate total revenue
-        BigDecimal totalRevenue = paidSales.stream()
-                .map(s -> BigDecimal.valueOf(s.getTotalAmount()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        double totalRevenue = 0;
+        for (Sale sale : paidSales) {
+            totalRevenue += sale.getTotalAmount();
+        }
 
         // Calculate total cost
-        BigDecimal totalCost = BigDecimal.ZERO;
+        double totalCost = 0;
         for (Sale sale : paidSales) {
             for (SaleItem item : sale.getItems()) {
                 Product product = item.getProduct();
                 if (product.getCostPrice() != null) {
-                    BigDecimal itemCost = BigDecimal.valueOf(product.getCostPrice())
-                            .multiply(BigDecimal.valueOf(item.getQuantity()));
-                    totalCost = totalCost.add(itemCost);
+                    totalCost += product.getCostPrice() * item.getQuantity();
                 }
             }
         }
 
         // Calculate profit
-        BigDecimal totalProfit = totalRevenue.subtract(totalCost);
+        double totalProfit = totalRevenue - totalCost;
 
-        // Calculate profit margin percentage
-        BigDecimal profitMarginPercent = BigDecimal.ZERO;
-        if (totalRevenue.compareTo(BigDecimal.ZERO) > 0) {
-            profitMarginPercent = totalProfit
-                    .divide(totalRevenue, 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100));
-        }
+        // Create response
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("totalRevenue", totalRevenue);
+        summary.put("totalCost", totalCost);
+        summary.put("totalProfit", totalProfit);
+        summary.put("salesCount", paidSales.size());
+        summary.put("productCount", productRepository.count());
 
-        // Calculate ROI percentage
-        BigDecimal roiPercent = BigDecimal.ZERO;
-        if (totalCost.compareTo(BigDecimal.ZERO) > 0) {
-            roiPercent = totalProfit
-                    .divide(totalCost, 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100));
-        }
-
-        // Calculate turnover rate (simple: sales / products)
-        List<Product> allProducts = productRepository.findAll();
-        BigDecimal turnoverRate = BigDecimal.ZERO;
-        if (!allProducts.isEmpty()) {
-            turnoverRate = BigDecimal.valueOf(paidSales.size())
-                    .divide(BigDecimal.valueOf(allProducts.size()), 4, RoundingMode.HALF_UP);
-        }
-
-        return new SummaryMetricsDTO(
-                totalRevenue,
-                totalProfit,
-                profitMarginPercent,
-                roiPercent,
-                turnoverRate,
-                paidSales.size(),
-                allProducts.size()
-        );
-    }
-
-    /**
-     * Get sales trend data for the last N days
-     */
-    public SalesTrendDTO getSalesTrend(int days) {
-        List<LocalDate> labels = new ArrayList<>();
-        List<BigDecimal> revenue = new ArrayList<>();
-        List<BigDecimal> profit = new ArrayList<>();
-
-        LocalDate today = LocalDate.now();
-
-        for (int i = days - 1; i >= 0; i--) {
-            LocalDate date = today.minusDays(i);
-            labels.add(date);
-
-            LocalDateTime startOfDay = date.atStartOfDay();
-            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
-
-            List<Sale> daySales = getSalesInRange(startOfDay, endOfDay).stream()
-                    .filter(s -> "PAID".equalsIgnoreCase(s.getStatus()))
-                    .collect(Collectors.toList());
-
-            // Calculate day revenue
-            BigDecimal dayRevenue = daySales.stream()
-                    .map(s -> BigDecimal.valueOf(s.getTotalAmount()))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            revenue.add(dayRevenue);
-
-            // Calculate day cost
-            BigDecimal dayCost = BigDecimal.ZERO;
-            for (Sale sale : daySales) {
-                for (SaleItem item : sale.getItems()) {
-                    Product product = item.getProduct();
-                    if (product.getCostPrice() != null) {
-                        BigDecimal itemCost = BigDecimal.valueOf(product.getCostPrice())
-                                .multiply(BigDecimal.valueOf(item.getQuantity()));
-                        dayCost = dayCost.add(itemCost);
-                    }
-                }
-            }
-
-            // Calculate day profit
-            BigDecimal dayProfit = dayRevenue.subtract(dayCost);
-            profit.add(dayProfit);
-        }
-
-        return new SalesTrendDTO(labels, revenue, profit);
+        return summary;
     }
 
     /**
      * Get product performance metrics
+     *
+     * Returns: list of products with their revenue and quantity sold
      */
-    public List<ProductPerformanceDTO> getProductPerformance(LocalDateTime startDate, LocalDateTime endDate) {
-        List<Sale> paidSales = getSalesInRange(startDate, endDate).stream()
-                .filter(s -> "PAID".equalsIgnoreCase(s.getStatus()))
-                .collect(Collectors.toList());
+    public List<Map<String, Object>> getProductPerformance(LocalDateTime startDate, LocalDateTime endDate) {
+        // Get all paid sales in date range
+        List<Sale> sales = getSalesInRange(startDate, endDate);
+        List<Sale> paidSales = new ArrayList<>();
 
-        Map<Long, ProductPerformanceDTO> performanceMap = new HashMap<>();
+        for (Sale sale : sales) {
+            if ("PAID".equalsIgnoreCase(sale.getStatus())) {
+                paidSales.add(sale);
+            }
+        }
+
+        // Track product performance
+        Map<Long, Map<String, Object>> performanceMap = new HashMap<>();
 
         // Initialize all products
         List<Product> allProducts = productRepository.findAll();
         for (Product product : allProducts) {
-            performanceMap.put(product.getId(), new ProductPerformanceDTO(
-                    product.getId(),
-                    product.getName(),
-                    0,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO
-            ));
+            Map<String, Object> performance = new HashMap<>();
+            performance.put("id", product.getId());
+            performance.put("name", product.getName());
+            performance.put("quantity", 0);
+            performance.put("revenue", 0.0);
+            performance.put("cost", 0.0);
+            performanceMap.put(product.getId(), performance);
         }
 
         // Calculate from sales
         for (Sale sale : paidSales) {
             for (SaleItem item : sale.getItems()) {
                 Long productId = item.getProduct().getId();
-                ProductPerformanceDTO dto = performanceMap.get(productId);
+                Map<String, Object> performance = performanceMap.get(productId);
 
-                if (dto != null) {
-                    dto.setQuantity(dto.getQuantity() + item.getQuantity());
-                    dto.setRevenue(dto.getRevenue().add(BigDecimal.valueOf(item.getSubtotal())));
+                if (performance != null) {
+                    // Update quantity
+                    int currentQty = (int) performance.get("quantity");
+                    performance.put("quantity", currentQty + item.getQuantity());
 
+                    // Update revenue
+                    double currentRevenue = (double) performance.get("revenue");
+                    performance.put("revenue", currentRevenue + item.getSubtotal());
+
+                    // Update cost
                     Product product = item.getProduct();
                     if (product.getCostPrice() != null) {
-                        BigDecimal itemCost = BigDecimal.valueOf(product.getCostPrice())
-                                .multiply(BigDecimal.valueOf(item.getQuantity()));
-                        dto.setCost(dto.getCost().add(itemCost));
+                        double currentCost = (double) performance.get("cost");
+                        double itemCost = product.getCostPrice() * item.getQuantity();
+                        performance.put("cost", currentCost + itemCost);
                     }
                 }
             }
         }
 
-        // Calculate profit, margin, and ROI
-        for (ProductPerformanceDTO dto : performanceMap.values()) {
-            BigDecimal profit = dto.getRevenue().subtract(dto.getCost());
-            dto.setProfit(profit);
-
-            // Calculate profit margin
-            if (dto.getRevenue().compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal margin = profit
-                        .divide(dto.getRevenue(), 4, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100));
-                dto.setProfitMargin(margin);
-            }
-
-            // Calculate ROI
-            if (dto.getCost().compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal roi = profit
-                        .divide(dto.getCost(), 4, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100));
-                dto.setRoi(roi);
-            }
+        // Calculate profit for each product
+        for (Map<String, Object> performance : performanceMap.values()) {
+            double revenue = (double) performance.get("revenue");
+            double cost = (double) performance.get("cost");
+            performance.put("profit", revenue - cost);
         }
 
         return new ArrayList<>(performanceMap.values());
     }
 
     /**
-     * Get category performance metrics
-     */
-    public List<CategoryPerformanceDTO> getCategoryPerformance(LocalDateTime startDate, LocalDateTime endDate) {
-        List<Sale> paidSales = getSalesInRange(startDate, endDate).stream()
-                .filter(s -> "PAID".equalsIgnoreCase(s.getStatus()))
-                .collect(Collectors.toList());
-
-        Map<Long, CategoryPerformanceDTO> performanceMap = new HashMap<>();
-
-        // Initialize categories
-        List<Category> allCategories = categoryRepository.findAll();
-        for (Category category : allCategories) {
-            performanceMap.put(category.getId(), new CategoryPerformanceDTO(
-                    category.getId(),
-                    category.getName(),
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
-                    0
-            ));
-        }
-
-        // Calculate from sales
-        for (Sale sale : paidSales) {
-            for (SaleItem item : sale.getItems()) {
-                Product product = item.getProduct();
-                if (product.getCategory() != null) {
-                    Long categoryId = product.getCategory().getId();
-                    CategoryPerformanceDTO dto = performanceMap.get(categoryId);
-
-                    if (dto != null) {
-                        dto.setRevenue(dto.getRevenue().add(BigDecimal.valueOf(item.getSubtotal())));
-                        dto.setQuantity(dto.getQuantity() + item.getQuantity());
-
-                        if (product.getCostPrice() != null) {
-                            BigDecimal itemCost = BigDecimal.valueOf(product.getCostPrice())
-                                    .multiply(BigDecimal.valueOf(item.getQuantity()));
-                            dto.setCost(dto.getCost().add(itemCost));
-                        }
-                    }
-                }
-            }
-        }
-
-        // Calculate profit and ROI
-        for (CategoryPerformanceDTO dto : performanceMap.values()) {
-            BigDecimal profit = dto.getRevenue().subtract(dto.getCost());
-            dto.setProfit(profit);
-
-            if (dto.getCost().compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal roi = profit
-                        .divide(dto.getCost(), 4, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100));
-                dto.setRoi(roi);
-            }
-        }
-
-        // Filter out categories with no revenue
-        return performanceMap.values().stream()
-                .filter(dto -> dto.getRevenue().compareTo(BigDecimal.ZERO) > 0)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get supplier performance metrics
-     */
-    public List<SupplierPerformanceDTO> getSupplierPerformance(LocalDateTime startDate, LocalDateTime endDate) {
-        List<Sale> paidSales = getSalesInRange(startDate, endDate).stream()
-                .filter(s -> "PAID".equalsIgnoreCase(s.getStatus()))
-                .collect(Collectors.toList());
-
-        Map<Long, SupplierPerformanceDTO> performanceMap = new HashMap<>();
-
-        // Initialize suppliers
-        List<Supplier> allSuppliers = supplierRepository.findAll();
-        for (Supplier supplier : allSuppliers) {
-            performanceMap.put(supplier.getId(), new SupplierPerformanceDTO(
-                    supplier.getId(),
-                    supplier.getName(),
-                    BigDecimal.ZERO,
-                    0
-            ));
-        }
-
-        // Calculate from sales
-        for (Sale sale : paidSales) {
-            for (SaleItem item : sale.getItems()) {
-                Product product = item.getProduct();
-                if (product.getSupplier() != null) {
-                    Long supplierId = product.getSupplier().getId();
-                    SupplierPerformanceDTO dto = performanceMap.get(supplierId);
-
-                    if (dto != null) {
-                        dto.setRevenue(dto.getRevenue().add(BigDecimal.valueOf(item.getSubtotal())));
-                        dto.setProductCount(dto.getProductCount() + 1);
-                    }
-                }
-            }
-        }
-
-        // Filter and sort
-        return performanceMap.values().stream()
-                .filter(dto -> dto.getRevenue().compareTo(BigDecimal.ZERO) > 0)
-                .sorted(Comparator.comparing(SupplierPerformanceDTO::getRevenue).reversed())
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Get stock status distribution
+     *
+     * Returns: count of products in-stock, low-stock, and out-of-stock
      */
-    public StockStatusDTO getStockStatus() {
+    public Map<String, Integer> getStockStatus() {
         List<Product> allProducts = productRepository.findAll();
 
         int inStock = 0;
@@ -351,161 +167,12 @@ public class ReportService {
             }
         }
 
-        return new StockStatusDTO(inStock, lowStock, outOfStock);
-    }
+        Map<String, Integer> status = new HashMap<>();
+        status.put("inStock", inStock);
+        status.put("lowStock", lowStock);
+        status.put("outOfStock", outOfStock);
 
-    /**
-     * Get inventory statistics
-     */
-    public InventoryStatsDTO getInventoryStats(LocalDateTime startDate, LocalDateTime endDate) {
-        List<Product> allProducts = productRepository.findAll();
-
-        // Total items in stock
-        int totalItems = allProducts.stream()
-                .mapToInt(Product::getCurrentStock)
-                .sum();
-
-        // Total inventory value
-        BigDecimal totalValue = allProducts.stream()
-                .map(p -> {
-                    int stock = p.getCurrentStock();
-                    Double cost = p.getCostPrice();
-                    if (cost != null) {
-                        return BigDecimal.valueOf(stock).multiply(BigDecimal.valueOf(cost));
-                    }
-                    return BigDecimal.ZERO;
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // Average profit margin
-        List<Product> productsWithPrices = allProducts.stream()
-                .filter(p -> p.getCostPrice() != null && p.getSellingPrice() != null)
-                .collect(Collectors.toList());
-
-        BigDecimal avgMargin = BigDecimal.ZERO;
-        if (!productsWithPrices.isEmpty()) {
-            BigDecimal totalMargin = productsWithPrices.stream()
-                    .map(p -> {
-                        BigDecimal cost = BigDecimal.valueOf(p.getCostPrice());
-                        BigDecimal selling = BigDecimal.valueOf(p.getSellingPrice());
-                        if (cost.compareTo(BigDecimal.ZERO) > 0) {
-                            return selling.subtract(cost)
-                                    .divide(cost, 4, RoundingMode.HALF_UP)
-                                    .multiply(BigDecimal.valueOf(100));
-                        }
-                        return BigDecimal.ZERO;
-                    })
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            avgMargin = totalMargin.divide(
-                    BigDecimal.valueOf(productsWithPrices.size()),
-                    2,
-                    RoundingMode.HALF_UP
-            );
-        }
-
-        // Total items sold
-        List<Sale> paidSales = getSalesInRange(startDate, endDate).stream()
-                .filter(s -> "PAID".equalsIgnoreCase(s.getStatus()))
-                .collect(Collectors.toList());
-
-        int totalItemsSold = paidSales.stream()
-                .flatMap(s -> s.getItems().stream())
-                .mapToInt(SaleItem::getQuantity)
-                .sum();
-
-        return new InventoryStatsDTO(totalItems, totalValue, avgMargin, totalItemsSold);
-    }
-
-    /**
-     * Generate smart recommendations based on data
-     */
-    public List<RecommendationDTO> getRecommendations() {
-        List<RecommendationDTO> recommendations = new ArrayList<>();
-
-        StockStatusDTO stockStatus = getStockStatus();
-        List<Product> allProducts = productRepository.findAll();
-
-        // Low stock alert
-        if (stockStatus.getLowStock() > 0) {
-            recommendations.add(new RecommendationDTO(
-                    "warning",
-                    "⚠️",
-                    "Low Stock Alert",
-                    stockStatus.getLowStock() + " products need restocking. Consider reordering soon.",
-                    "View Items"
-            ));
-        }
-
-        // Out of stock alert
-        if (stockStatus.getOutOfStock() > 0) {
-            recommendations.add(new RecommendationDTO(
-                    "warning",
-                    "❌",
-                    "Out of Stock Items",
-                    stockStatus.getOutOfStock() + " products are out of stock. Restock to avoid lost sales.",
-                    "Restock Now"
-            ));
-        }
-
-        // Get product performance for recommendations
-        LocalDateTime endDate = LocalDateTime.now();
-        LocalDateTime startDate = endDate.minusDays(30);
-        List<ProductPerformanceDTO> performance = getProductPerformance(startDate, endDate);
-
-        // Best seller recommendation
-        ProductPerformanceDTO bestSeller = performance.stream()
-                .max(Comparator.comparing(ProductPerformanceDTO::getRevenue))
-                .orElse(null);
-
-        if (bestSeller != null && bestSeller.getRevenue().compareTo(BigDecimal.ZERO) > 0) {
-            recommendations.add(new RecommendationDTO(
-                    "success",
-                    "🌟",
-                    "Focus on Best Sellers",
-                    bestSeller.getName() + " is your top performer with $" +
-                            bestSeller.getRevenue().setScale(2, RoundingMode.HALF_UP) +
-                            " in revenue. Ensure adequate stock levels.",
-                    "View Details"
-            ));
-        }
-
-        // High ROI recommendation
-        ProductPerformanceDTO highRoi = performance.stream()
-                .filter(p -> p.getRoi().compareTo(BigDecimal.valueOf(30)) > 0)
-                .max(Comparator.comparing(ProductPerformanceDTO::getRoi))
-                .orElse(null);
-
-        if (highRoi != null) {
-            recommendations.add(new RecommendationDTO(
-                    "success",
-                    "💰",
-                    "High Profit Opportunity",
-                    highRoi.getName() + " has " +
-                            highRoi.getRoi().setScale(1, RoundingMode.HALF_UP) +
-                            "% ROI. Consider promoting it.",
-                    "Promote"
-            ));
-        }
-
-        // Slow moving items
-        ProductPerformanceDTO slowMover = performance.stream()
-                .filter(p -> p.getQuantity() > 0 && p.getQuantity() < 5)
-                .min(Comparator.comparing(ProductPerformanceDTO::getQuantity))
-                .orElse(null);
-
-        if (slowMover != null) {
-            recommendations.add(new RecommendationDTO(
-                    "info",
-                    "📉",
-                    "Slow Moving Items",
-                    slowMover.getName() + " has low sales (" + slowMover.getQuantity() +
-                            " units). Consider discounting to improve turnover.",
-                    "Create Promotion"
-            ));
-        }
-
-        return recommendations;
+        return status;
     }
 
     /**
@@ -513,11 +180,42 @@ public class ReportService {
      */
     private List<Sale> getSalesInRange(LocalDateTime startDate, LocalDateTime endDate) {
         List<Sale> allSales = saleRepository.findAll();
-        return allSales.stream()
-                .filter(s -> {
-                    LocalDateTime saleDate = s.getSaleDate();
-                    return !saleDate.isBefore(startDate) && !saleDate.isAfter(endDate);
-                })
-                .collect(Collectors.toList());
+        List<Sale> salesInRange = new ArrayList<>();
+
+        for (Sale sale : allSales) {
+            LocalDateTime saleDate = sale.getSaleDate();
+            // Check if sale date is within range
+            if (!saleDate.isBefore(startDate) && !saleDate.isAfter(endDate)) {
+                salesInRange.add(sale);
+            }
+        }
+
+        return salesInRange;
     }
 }
+
+/**
+ * WHAT WAS SIMPLIFIED:
+ *
+ * REMOVED (Too complex for learning):
+ * - SalesTrendDTO and sales trend calculation
+ * - CategoryPerformanceDTO and category analytics
+ * - SupplierPerformanceDTO and supplier analytics
+ * - InventoryStatsDTO and inventory statistics
+ * - RecommendationDTO and smart recommendations
+ * - Complex BigDecimal calculations and ROI formulas
+ * - Java Streams (replaced with simple loops for clarity)
+ *
+ * KEPT (Essential for understanding):
+ * - Summary metrics (revenue, profit, sales count)
+ * - Product performance (what's selling)
+ * - Stock status (inventory levels)
+ *
+ * WHY THIS IS BETTER FOR LEARNING:
+ * - Uses simple loops instead of Streams API
+ * - Uses HashMap instead of custom DTOs
+ * - Uses double instead of BigDecimal
+ * - Easier to read and understand
+ * - Still demonstrates MVC pattern
+ * - Still shows how to aggregate data from database
+ */

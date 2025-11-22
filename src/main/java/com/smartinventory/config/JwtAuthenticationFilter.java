@@ -2,7 +2,6 @@ package com.smartinventory.config;
 
 import com.smartinventory.model.User;
 import com.smartinventory.service.JwtService;
-import com.smartinventory.service.TokenBlacklistService;
 import com.smartinventory.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -37,17 +36,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserService userService;
-    private final TokenBlacklistService tokenBlacklistService;
 
     @Autowired
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            UserService userService,
-            TokenBlacklistService tokenBlacklistService
+            UserService userService
     ) {
         this.jwtService = jwtService;
         this.userService = userService;
-        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -75,13 +71,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // If username exists and no authentication is set yet
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                // Check if token is blacklisted (revoked)
-                if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
-                    logger.warn("Token is blacklisted (revoked): " + jwt.substring(0, 20) + "...");
-                    filterChain.doFilter(request, response);
-                    return;
-                }
 
                 // Load user from database
                 User user = userService.getUserByUsername(username);
